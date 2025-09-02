@@ -219,7 +219,7 @@ export const Journaling = () => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '24px 32px',
+        padding: '24px 32px 24px 100px',
         backgroundColor: 'white',
         borderBottom: '1px solid #e5e7eb'
       }}>
@@ -333,7 +333,7 @@ export const Journaling = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div style={{ padding: '32px' }}>
+      <div style={{ padding: '32px 32px 32px 100px' }}>
         <div style={{
           backgroundColor: 'white',
           borderRadius: '16px',
@@ -387,7 +387,7 @@ export const Journaling = () => {
             zIndex: 10000,
             backgroundColor: 'rgba(0, 0, 0, 0.5)',
             display: 'flex',
-            alignItems: 'flex-end',
+            alignItems: 'center',
             justifyContent: 'center'
           }}
           onClick={(e) => {
@@ -402,11 +402,14 @@ export const Journaling = () => {
               maxWidth: '800px',
               maxHeight: '85vh',
               backgroundColor: 'white',
-              borderRadius: '16px 16px 0 0',
-              boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+              borderRadius: '16px',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
               display: 'flex',
               flexDirection: 'column',
-              animation: 'slideUp 0.3s ease-out'
+              margin: '20px',
+              transform: 'scale(1)',
+              opacity: 1,
+              transition: 'all 0.3s ease-out'
             }}
             onClick={(e) => e.stopPropagation()}
           >

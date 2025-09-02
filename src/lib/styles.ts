@@ -1,10 +1,13 @@
 import { CSSProperties } from 'react';
 
 export const mainStyle: CSSProperties = {
-  minHeight: '100vh',
+  height: '100vh',
   backgroundColor: '#f8f9fa',
   width: '100vw',
-  position: 'relative' as const
+  position: 'relative' as const,
+  margin: 0,
+  padding: 0,
+  overflowY: 'auto'
 };
 
 export const backdropStyle: CSSProperties = {

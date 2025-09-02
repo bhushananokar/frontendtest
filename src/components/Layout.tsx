@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
-import { mainStyle, headerStyle, backdropStyle } from '../lib/styles';
+import { mainStyle, backdropStyle } from '../lib/styles';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,7 +18,17 @@ export const Layout: React.FC<LayoutProps> = ({
   onPageChange
 }) => {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
+    <div style={{ 
+      display: 'flex', 
+      minHeight: '100vh', 
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      margin: 0, 
+      padding: 0 
+    }}>
       {/* Backdrop - shown when sidebar is open to create overlay effect */}
       {sidebarOpen && (
         <div 
@@ -35,12 +45,6 @@ export const Layout: React.FC<LayoutProps> = ({
       />
 
       <div style={mainStyle}>
-        <header style={headerStyle}>
-          <span style={{ fontSize: '14px', color: '#6b7280' }}>
-            Welcome to MindSpace
-          </span>
-        </header>
-        
         {children}
       </div>
     </div>

@@ -116,7 +116,7 @@ export const Therapy = () => {
       height: '100vh', 
       width: '100%',
       overflow: 'hidden',
-      backgroundColor: '#1a1a1a'
+      backgroundColor: '#ffffff'
     }}>
       {/* Animated Background Bars */}
       <GradientBars 
@@ -134,7 +134,7 @@ export const Therapy = () => {
         textAlign: 'center',
         maxWidth: '600px',
         padding: '40px',
-        color: 'white',
+        color: '#374151',
         width: '90%'
       }}>
         {/* Main Text Display */}
@@ -143,15 +143,17 @@ export const Therapy = () => {
           fontWeight: '300',
           lineHeight: '1.6',
           marginBottom: '40px',
-          textShadow: '0 2px 8px rgba(0, 0, 0, 0.7)',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
           minHeight: '120px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderRadius: '16px',
           padding: '30px',
-          backdropFilter: 'blur(10px)'
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
         }}>
           {currentText}
         </div>
@@ -189,9 +191,9 @@ export const Therapy = () => {
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              backgroundColor: isListening ? '#ef4444' : 'rgba(255, 255, 255, 0.15)',
-              border: '3px solid rgba(255, 255, 255, 0.4)',
-              color: 'white',
+              backgroundColor: isListening ? '#ef4444' : 'rgba(139, 92, 246, 0.15)',
+              border: '3px solid rgba(139, 92, 246, 0.4)',
+              color: isListening ? 'white' : '#8B5CF6',
               cursor: isSpeaking ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -199,7 +201,7 @@ export const Therapy = () => {
               opacity: isSpeaking ? 0.5 : 1,
               transition: 'all 0.3s ease',
               backdropFilter: 'blur(10px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2)',
               fontSize: '24px'
             }}
           >
@@ -213,16 +215,16 @@ export const Therapy = () => {
               width: '80px',
               height: '80px',
               borderRadius: '50%',
-              backgroundColor: speechEnabled ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-              border: '3px solid rgba(255, 255, 255, 0.4)',
-              color: 'white',
+              backgroundColor: speechEnabled ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.05)',
+              border: '3px solid rgba(139, 92, 246, 0.4)',
+              color: '#8B5CF6',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.3s ease',
               backdropFilter: 'blur(10px)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.2)',
               opacity: speechEnabled ? 1 : 0.6
             }}
           >
@@ -234,11 +236,13 @@ export const Therapy = () => {
         <div style={{
           fontSize: '16px',
           opacity: 0.8,
-          textShadow: '0 2px 4px rgba(0, 0, 0, 0.7)',
-          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
           borderRadius: '20px',
           padding: '15px 25px',
-          display: 'inline-block'
+          display: 'inline-block',
+          border: '1px solid rgba(139, 92, 246, 0.2)',
+          boxShadow: '0 4px 16px rgba(139, 92, 246, 0.1)'
         }}>
           Click the microphone to start speaking with Mindy
         </div>
