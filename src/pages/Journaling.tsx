@@ -122,7 +122,7 @@ export const Journaling = () => {
             borderRadius: '8px',
             padding: '8px',
             cursor: 'pointer',
-            backgroundColor: hasEntries ? 'white' : '#f9fafb',
+            backgroundColor: hasEntries ? 'white' : '#fdfcf8',
             transition: 'all 0.2s ease',
             display: 'flex',
             flexDirection: 'column',
@@ -210,7 +210,7 @@ export const Journaling = () => {
 
   return (
     <div style={{ 
-      backgroundColor: '#f8f9fa', 
+      backgroundColor: '#fdfcf8', 
       minHeight: 'calc(100vh - 64px)',
       padding: '0'
     }}>
@@ -345,7 +345,7 @@ export const Journaling = () => {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(7, 1fr)',
-            backgroundColor: '#f8f9fa',
+            backgroundColor: '#fdfcf8',
             borderBottom: '1px solid #e5e7eb'
           }}>
             {dayNames.map((day) => (
@@ -517,7 +517,7 @@ export const Journaling = () => {
                     <div
                       key={index}
                       style={{
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: '#fdfcf8',
                         border: '1px solid #f3f4f6',
                         borderRadius: '12px',
                         padding: '20px',
@@ -531,7 +531,7 @@ export const Journaling = () => {
                         e.currentTarget.style.transform = 'translateY(-1px)'
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f8f9fa'
+                        e.currentTarget.style.backgroundColor = '#fdfcf8'
                         e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.06)'
                         e.currentTarget.style.transform = 'translateY(0)'
                       }}

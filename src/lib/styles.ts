@@ -2,7 +2,7 @@ import { CSSProperties } from 'react';
 
 export const mainStyle: CSSProperties = {
   height: '100vh',
-  backgroundColor: '#f8f9fa',
+  backgroundColor: '#fdfcf8',
   width: '100vw',
   position: 'relative' as const,
   margin: 0,
