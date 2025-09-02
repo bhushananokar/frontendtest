@@ -1,0 +1,61 @@
+'use client';
+
+import { motion } from 'motion/react';
+
+interface GradientBarsProps {
+  bars?: number;
+  colors?: string[];
+}
+
+export const GradientBars = ({
+  bars = 20,
+  colors = ['#e60a64', 'transparent'],
+}: GradientBarsProps) => {
+  const gradientStyle = `linear-gradient(to top, ${colors.join(', ')})`;
+  return (
+    <div style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 0,
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        display: 'flex',
+        height: '100%',
+        width: '100%'
+      }}>
+        {Array.from({ length: bars }).map((_, index) => {
+          const position = index / (bars - 1);
+          const center = 0.5;
+          const distance = Math.abs(position - center);
+          const scale = 0.3 + 0.7 * Math.pow(distance * 2, 1.2);
+
+          return (
+            <motion.div
+              key={`bg-bar-${index}`}
+              style={{ 
+                flex: 1,
+                transformOrigin: 'bottom',
+                background: gradientStyle
+              }}
+              animate={{
+                scaleY: [scale, scale + 0.1, scale],
+                opacity: [1, 0.95, 1],
+              }}
+              transition={{
+                duration: 3,
+                ease: 'easeInOut',
+                repeat: Infinity,
+                repeatType: 'mirror',
+                delay: index * 0.1,
+              }}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
