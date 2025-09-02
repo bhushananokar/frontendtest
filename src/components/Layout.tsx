@@ -1,7 +1,6 @@
 import React from 'react';
-import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
-import { createMainStyle, headerStyle, menuButtonStyle } from '../lib/styles';
+import { createMainStyle, headerStyle } from '../lib/styles';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -24,16 +23,11 @@ export const Layout: React.FC<LayoutProps> = ({
         sidebarOpen={sidebarOpen}
         currentPage={currentPage}
         onPageChange={onPageChange}
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
 
       <div style={createMainStyle(sidebarOpen)}>
         <header style={headerStyle}>
-          <button 
-            style={menuButtonStyle}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu size={20} />
-          </button>
           <span style={{ fontSize: '14px', color: '#6b7280' }}>
             Welcome to MindSpace
           </span>
