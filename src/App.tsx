@@ -20,6 +20,7 @@ import {
   ChevronRight
 } from "lucide-react"
 import { Therapy } from './components/Therapy'
+import { Journaling } from './components/Journaling'
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -262,9 +263,11 @@ function App() {
         </header>
 
         {/* Main Content */}
-        <main style={{ padding: currentPage === 'therapy' ? '0' : '32px' }}>
+        <main style={{ padding: currentPage === 'therapy' || currentPage === 'journaling' ? '0' : '32px' }}>
           {currentPage === 'therapy' ? (
             <Therapy />
+          ) : currentPage === 'journaling' ? (
+            <Journaling />
           ) : (
           <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
             {/* Dashboard Header */}
