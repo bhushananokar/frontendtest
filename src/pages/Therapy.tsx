@@ -5,14 +5,13 @@ import {
   Volume2, 
   VolumeX
 } from "lucide-react"
-import { GradientBars } from './bg-bars'
+import { GradientBars } from '../components/bg-bars'
 
 export const Therapy = () => {
   const [currentText, setCurrentText] = useState("Hello! I'm Mindy, your AI therapist. I'm here to listen, support, and help you work through whatever is on your mind. How are you feeling today?")
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [speechEnabled, setSpeechEnabled] = useState(true)
-  const [inputText, setInputText] = useState('')
   
   const recognitionRef = useRef<any>(null)
   const synthRef = useRef<SpeechSynthesis | null>(null)
@@ -33,9 +32,7 @@ export const Therapy = () => {
       recognitionRef.current.interimResults = false
       recognitionRef.current.lang = 'en-US'
 
-      recognitionRef.current.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript
-        setInputText(transcript)
+      recognitionRef.current.onresult = () => {
         setIsListening(false)
         
         // Process user input and generate response
