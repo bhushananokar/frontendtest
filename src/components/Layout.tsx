@@ -1,6 +1,6 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
-import { createMainStyle, headerStyle } from '../lib/styles';
+import { mainStyle, headerStyle, backdropStyle } from '../lib/styles';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,7 +18,15 @@ export const Layout: React.FC<LayoutProps> = ({
   onPageChange
 }) => {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
+      {/* Backdrop - shown when sidebar is open to create overlay effect */}
+      {sidebarOpen && (
+        <div 
+          style={backdropStyle}
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      
       <Sidebar 
         sidebarOpen={sidebarOpen}
         currentPage={currentPage}
@@ -26,7 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({
         onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      <div style={createMainStyle(sidebarOpen)}>
+      <div style={mainStyle}>
         <header style={headerStyle}>
           <span style={{ fontSize: '14px', color: '#6b7280' }}>
             Welcome to MindSpace

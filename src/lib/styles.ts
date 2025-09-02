@@ -1,12 +1,24 @@
 import { CSSProperties } from 'react';
 
-export const createMainStyle = (sidebarOpen: boolean): CSSProperties => ({
-  marginLeft: sidebarOpen ? '250px' : '60px',
-  transition: 'margin-left 0.3s ease',
+export const mainStyle: CSSProperties = {
   minHeight: '100vh',
   backgroundColor: '#f8f9fa',
-  width: `calc(100vw - ${sidebarOpen ? '250px' : '60px'})`
-});
+  width: '100vw',
+  position: 'relative' as const
+};
+
+export const backdropStyle: CSSProperties = {
+  position: 'fixed' as const,
+  top: 0,
+  left: 0,
+  width: '100vw',
+  height: '100vh',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  zIndex: 999,
+  opacity: 1,
+  transition: 'opacity 0.3s ease',
+  cursor: 'pointer'
+};
 
 export const headerStyle: CSSProperties = {
   height: '64px',
