@@ -1,11 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Clock, ArrowLeft } from 'lucide-react'
+import useJournalStore from '@/hooks/useJournalStore'
 
 export const Journaling = () => {
   const [currentMonth, setCurrentMonth] = useState(7) // August (0-indexed)
   const [currentYear, setCurrentYear] = useState(2025)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0) // Force re-render when entries change
+
+  const store = useJournalStore()
+
+  // Listen for journal saves to refresh calendar
+  useEffect(() => {
+    const handleJournalSaved = () => {
+      setRefreshKey(prev => prev + 1)
+    }
+
+    window.addEventListener('journal-saved', handleJournalSaved)
+    window.addEventListener('journal-deleted', handleJournalSaved)
+    
+    return () => {
+      window.removeEventListener('journal-saved', handleJournalSaved)
+      window.removeEventListener('journal-deleted', handleJournalSaved)
+    }
+  }, [])
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -14,22 +33,21 @@ export const Journaling = () => {
 
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
-  // Sample journal data with detailed entries for each day
-  const journalEntries = {
-    1: [
-      { title: 'I Had a Great Day', time: '9:30 AM', emotion: 'Happy', content: 'Today was incredibly productive... Feeling really positive about tomorrow', color: '#10b981' },
-      { title: 'Morning Thoughts', time: '7:15 AM', emotion: 'Calm', content: 'Woke idea feeling refreshed. Had strange drook. Decided to start fri book.', color: '#0ea5e9' },
-      { title: 'Evening Reflection', time: '8:45 PM', emotion: 'Grateful', content: 'Grateful for all the opportunities today brought', color: '#8B5CF6' }
-    ],
-    16: [
-      { title: 'INening Day', time: '2:15 PM', emotion: 'Anxious', content: 'Spent hoursut grapping with... Spent timuns lero incolusive... Need consult Dr. Chen', color: '#f59e0b' },
-      { title: 'The Science Dilemma', time: '6:30 PM', emotion: 'Frustrated', content: 'The experiment results were inconclusive Dinner', color: '#ef4444' },
-      { title: 'Morning Thoughts', time: '8:00 AM', emotion: 'Hopeful', content: 'Woke idea feeling refreshed. Had strange drook. Decided to start fri book.', color: '#8B5CF6' }
-    ],
-    24: [
-      { title: 'Weekend Plans', time: '11:30 AM', emotion: 'Excited', content: 'Planning something amazing for the weekend with friends', color: '#10b981' },
-      { title: 'Work Reflection', time: '4:45 PM', emotion: 'Productive', content: 'Got a lot done today, feeling accomplished', color: '#0ea5e9' }
-    ]
+  // Get real journal entries from store
+  const getJournalEntriesForDay = (day: number) => {
+    const date = new Date(currentYear, currentMonth, day)
+    const entry = store.getEntry(date)
+    if (!entry || !entry.content) return []
+    
+    // Convert stored content to display format - refreshKey forces re-render
+    return [{
+      title: 'Journal Entry',
+      time: new Date(entry.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      emotion: 'Personal',
+      content: entry.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...',
+      color: '#8B5CF6',
+      _refreshKey: refreshKey // Use refreshKey to force component updates
+    }]
   }
 
   const getDaysInMonth = (month: number, year: number) => {
@@ -109,7 +127,7 @@ export const Journaling = () => {
 
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const entries = journalEntries[day as keyof typeof journalEntries] || []
+      const entries = getJournalEntriesForDay(day)
       const hasEntries = entries.length > 0
 
       days.push(
@@ -150,7 +168,7 @@ export const Journaling = () => {
           </div>
 
           {/* Journal entries */}
-          {entries.slice(0, 3).map((entry, index) => (
+          {entries.slice(0, 3).map((entry: ReturnType<typeof getJournalEntriesForDay>[0], index: number) => (
             <div
               key={index}
               style={{
@@ -236,8 +254,12 @@ export const Journaling = () => {
           {/* Add New Journal For Today Button */}
           <button
             onClick={() => {
-              const today = new Date().getDate()
-              handleDayClick(today)
+              try {
+                const dateIso = new Date().toISOString().split('T')[0]
+                window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+              } catch {
+                // Fallback - no action needed
+              }
             }}
             style={{
               display: 'flex',
@@ -511,9 +533,9 @@ export const Journaling = () => {
 
             {/* Journal Entries */}
             <div style={{ padding: '24px', maxHeight: '60vh', overflowY: 'auto', flex: 1 }}>
-              {selectedDay && journalEntries[selectedDay as keyof typeof journalEntries] ? (
+              {selectedDay && getJournalEntriesForDay(selectedDay).length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  {(journalEntries[selectedDay as keyof typeof journalEntries] as any[]).map((entry, index) => (
+                  {getJournalEntriesForDay(selectedDay).map((entry: ReturnType<typeof getJournalEntriesForDay>[0], index: number) => (
                     <div
                       key={index}
                       style={{
@@ -524,6 +546,13 @@ export const Journaling = () => {
                         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
                         transition: 'all 0.2s ease',
                         cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        // Open editor for this date
+                        const date = new Date(currentYear, currentMonth, selectedDay)
+                        const dateIso = date.toISOString().split('T')[0]
+                        window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+                        setIsDrawerOpen(false)
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = 'white'
@@ -536,52 +565,34 @@ export const Journaling = () => {
                         e.currentTarget.style.transform = 'translateY(0)'
                       }}
                     >
-                      {typeof entry === 'string' ? (
-                        <div>
-                          <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0' }}>
-                            {entry}
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>
+                            {entry.title}
                           </h3>
-                          <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-                            Click to read more...
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: 0 }}>
-                              {entry.title}
-                            </h3>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span
-                                style={{
-                                  padding: '4px 12px',
-                                  backgroundColor: entry.emotion === 'Happy' ? '#dcfce7' : 
-                                                 entry.emotion === 'Anxious' ? '#fef3c7' :
-                                                 entry.emotion === 'Frustrated' ? '#fee2e2' :
-                                                 entry.emotion === 'Excited' ? '#dbeafe' :
-                                                 entry.emotion === 'Calm' ? '#e0f2fe' :
-                                                 entry.emotion === 'Grateful' ? '#f3e8ff' :
-                                                 entry.emotion === 'Hopeful' ? '#f3e8ff' :
-                                                 entry.emotion === 'Productive' ? '#e0f2fe' : '#f3f4f6',
-                                  color: entry.color,
-                                  borderRadius: '16px',
-                                  fontSize: '12px',
-                                  fontWeight: '500'
-                                }}
-                              >
-                                {entry.emotion}
-                              </span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6b7280' }}>
-                                <Clock size={14} />
-                                <span style={{ fontSize: '12px' }}>{entry.time}</span>
-                              </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span
+                              style={{
+                                padding: '4px 12px',
+                                backgroundColor: '#f3e8ff',
+                                color: entry.color,
+                                borderRadius: '16px',
+                                fontSize: '12px',
+                                fontWeight: '500'
+                              }}
+                            >
+                              {entry.emotion}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6b7280' }}>
+                              <Clock size={14} />
+                              <span style={{ fontSize: '12px' }}>{entry.time}</span>
                             </div>
                           </div>
-                          <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.5', margin: 0 }}>
-                            {entry.content}
-                          </p>
                         </div>
-                      )}
+                        <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.5', margin: 0 }}>
+                          {entry.content}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -598,6 +609,26 @@ export const Journaling = () => {
                   <p style={{ fontSize: '14px', margin: 0 }}>
                     Start writing your thoughts for {getSelectedDateString()}
                   </p>
+                  <button
+                    onClick={() => {
+                      const date = new Date(currentYear, currentMonth, selectedDay!)
+                      const dateIso = date.toISOString().split('T')[0]
+                      window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+                      setIsDrawerOpen(false)
+                    }}
+                    style={{
+                      marginTop: '16px',
+                      padding: '8px 16px',
+                      backgroundColor: '#8B5CF6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Add Journal Entry
+                  </button>
                 </div>
               )}
             </div>

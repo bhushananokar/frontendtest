@@ -5,7 +5,8 @@ import {
   Flower2, 
   Settings, 
   HelpCircle,
-  Menu
+  Menu,
+  Pencil
 } from "lucide-react"
 
 interface SidebarProps {
@@ -50,13 +51,15 @@ export const Sidebar = ({ sidebarOpen, currentPage, onPageChange, onToggleSideba
   }
 
   const logoStyle = {
-    width: '32px',
-    height: '32px',
+    width: '44px',
+    height: '44px',
     backgroundColor: 'white',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.12)',
+    border: '2px solid rgba(255,255,255,0.7)'
   }
 
   const menuButtonStyle = {
@@ -179,6 +182,93 @@ export const Sidebar = ({ sidebarOpen, currentPage, onPageChange, onToggleSideba
             </div>
           )
         })}
+      </div>
+
+      {/* Journal Now button placed below Meditation */}
+      <div style={{ display: 'flex', justifyContent: sidebarOpen ? 'flex-start' : 'center', padding: sidebarOpen ? '8px 16px' : '8px' }}>
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+          <style>{`@keyframes ringPulse{0%{transform:scale(1);opacity:0.9}50%{transform:scale(1.45);opacity:0.28}100%{transform:scale(1);opacity:0.9}}`}</style>
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              left: sidebarOpen ? 28 : '50%',
+              top: '50%',
+              transform: sidebarOpen ? 'translateY(-50%)' : 'translate(-50%,-50%)',
+              width: sidebarOpen ? 72 : 88,
+              height: sidebarOpen ? 72 : 88,
+              borderRadius: '999px',
+              background: 'rgba(6,182,212,0.08)',
+              boxShadow: '0 6px 24px rgba(6,182,212,0.14)',
+              animation: 'ringPulse 2000ms infinite ease-in-out'
+            }}
+          />
+
+          <button
+            aria-label="Journal Now"
+            title={!sidebarOpen ? 'Journal Now' : ''}
+            onClick={() => {
+              try {
+                const dateIso = new Date().toISOString().split('T')[0]
+                window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+              } catch {
+                // Fallback - no action needed
+              }
+            }}
+            style={{
+              width: sidebarOpen ? '220px' : '56px',
+              height: '56px',
+              borderRadius: '999px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: sidebarOpen ? 'flex-start' : 'center',
+              gap: '12px',
+              padding: sidebarOpen ? '0 16px' : 0,
+              background: 'linear-gradient(90deg, rgba(139,92,246,1) 0%, rgba(124,58,237,1) 100%)',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 8px 24px rgba(99,102,241,0.18)',
+              transition: 'all 200ms ease',
+              fontWeight: 700,
+              fontSize: '14px',
+              position: 'relative',
+              zIndex: 2,
+              paddingLeft: sidebarOpen ? 52 : 0
+            }}
+            onMouseEnter={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.setProperty('transform', 'translateY(-3px)')
+              el.style.setProperty('box-shadow', '0 12px 32px rgba(99,102,241,0.22)')
+            }}
+            onMouseLeave={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.setProperty('transform', 'translateY(0)')
+              el.style.setProperty('box-shadow', '0 8px 24px rgba(99,102,241,0.18)')
+            }}
+            onFocus={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.setProperty('outline', '4px solid rgba(139,92,246,0.18)')
+            }}
+            onBlur={(e) => {
+              const el = e.currentTarget as HTMLButtonElement
+              el.style.setProperty('outline', 'none')
+            }}
+          >
+            <div style={{
+              width: 40,
+              height: 40,
+              borderRadius: '999px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(255,255,255,0.12)'
+            }}>
+              <Pencil size={18} />
+            </div>
+            {sidebarOpen && <span style={{ lineHeight: 1 }}>{'Journal Now'}</span>}
+          </button>
+        </div>
       </div>
 
       {/* Spacer - pushes bottom items to the bottom */}

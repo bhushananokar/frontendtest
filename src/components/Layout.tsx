@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Sidebar } from './Sidebar';
 import { mainStyle, backdropStyle } from '../lib/styles';
 
@@ -17,6 +17,27 @@ export const Layout: React.FC<LayoutProps> = ({
   currentPage,
   onPageChange
 }) => {
+  // Global journal editor state
+  const [editorOpenForDate, setEditorOpenForDate] = useState<Date | null>(null)
+
+  // Lazy-load journal editor component
+  const LazyJournalEditor = lazy(() => import('@/components/JournalEditor').then(mod => ({ default: mod.JournalEditor })))
+
+  // Global event listener for opening journal editor from any page
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      try {
+        const dateIso = e?.detail?.dateIso
+        const date = dateIso ? new Date(dateIso) : new Date()
+        setEditorOpenForDate(date)
+      } catch {
+        setEditorOpenForDate(new Date())
+      }
+    }
+
+    window.addEventListener('open-journal-editor', handler as EventListener)
+    return () => window.removeEventListener('open-journal-editor', handler as EventListener)
+  }, [])
   return (
     <div style={{ 
       display: 'flex', 
@@ -47,6 +68,13 @@ export const Layout: React.FC<LayoutProps> = ({
       <div style={mainStyle}>
         {children}
       </div>
+
+      {/* Global Journal Editor - can be opened from any page */}
+      {editorOpenForDate && (
+        <Suspense fallback={<div style={{ color: '#6b7280', textAlign: 'center', padding: 20 }}>Loading editor…</div>}>
+          <LazyJournalEditor date={editorOpenForDate} onClose={() => setEditorOpenForDate(null)} />
+        </Suspense>
+      )}
     </div>
   );
 };
