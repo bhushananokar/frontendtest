@@ -19,6 +19,7 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   // Global journal editor state
   const [editorOpenForDate, setEditorOpenForDate] = useState<Date | null>(null)
+  const [editorEntryId, setEditorEntryId] = useState<string | null>(null)
 
   // Lazy-load journal editor component
   const LazyJournalEditor = lazy(() => import('@/components/JournalEditor').then(mod => ({ default: mod.JournalEditor })))
@@ -27,11 +28,14 @@ export const Layout: React.FC<LayoutProps> = ({
   useEffect(() => {
     const handler = (e: CustomEvent) => {
       try {
-        const dateIso = e?.detail?.dateIso
+        const { dateIso, entryId } = e?.detail || {}
         const date = dateIso ? new Date(dateIso) : new Date()
         setEditorOpenForDate(date)
+        setEditorEntryId(entryId || null)
+        console.log('🎯 Layout received editor open event:', { dateIso, entryId, hasEntryId: !!entryId })
       } catch {
         setEditorOpenForDate(new Date())
+        setEditorEntryId(null)
       }
     }
 
@@ -72,7 +76,14 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Global Journal Editor - can be opened from any page */}
       {editorOpenForDate && (
         <Suspense fallback={<div style={{ color: '#6b7280', textAlign: 'center', padding: 20 }}>Loading editor…</div>}>
-          <LazyJournalEditor date={editorOpenForDate} onClose={() => setEditorOpenForDate(null)} />
+          <LazyJournalEditor 
+            date={editorOpenForDate} 
+            entryId={editorEntryId}
+            onClose={() => {
+              setEditorOpenForDate(null)
+              setEditorEntryId(null)
+            }} 
+          />
         </Suspense>
       )}
     </div>

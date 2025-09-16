@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Plus, Clock, ArrowLeft } from 'lucide-react'
-import useJournalStore from '@/hooks/useJournalStore'
+import { ChevronLeft, ChevronRight, Plus, Clock, ArrowLeft, Trash2 } from 'lucide-react'
+import useJournalStore, { formatDateToISO } from '@/hooks/useJournalStore'
 
 export const Journaling = () => {
-  const [currentMonth, setCurrentMonth] = useState(7) // August (0-indexed)
-  const [currentYear, setCurrentYear] = useState(2025)
+  const today = new Date()
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth()) // Current month (0-indexed)
+  const [currentYear, setCurrentYear] = useState(today.getFullYear())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0) // Force re-render when entries change
+  const [deleteConfirm, setDeleteConfirm] = useState<{entryId: string, entryTitle: string} | null>(null)
 
   const store = useJournalStore()
 
@@ -17,12 +19,18 @@ export const Journaling = () => {
       setRefreshKey(prev => prev + 1)
     }
 
+    const handleJournalSynced = () => {
+      setRefreshKey(prev => prev + 1)
+    }
+
     window.addEventListener('journal-saved', handleJournalSaved)
     window.addEventListener('journal-deleted', handleJournalSaved)
+    window.addEventListener('journal-synced', handleJournalSynced)
     
     return () => {
       window.removeEventListener('journal-saved', handleJournalSaved)
       window.removeEventListener('journal-deleted', handleJournalSaved)
+      window.removeEventListener('journal-synced', handleJournalSynced)
     }
   }, [])
 
@@ -36,18 +44,19 @@ export const Journaling = () => {
   // Get real journal entries from store
   const getJournalEntriesForDay = (day: number) => {
     const date = new Date(currentYear, currentMonth, day)
-    const entry = store.getEntry(date)
-    if (!entry || !entry.content) return []
+    const entries = store.getEntriesForDate(date)
+    if (!entries || entries.length === 0) return []
     
     // Convert stored content to display format - refreshKey forces re-render
-    return [{
+    return entries.map(entry => ({
+      id: entry.id,
       title: 'Journal Entry',
       time: new Date(entry.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       emotion: 'Personal',
       content: entry.content.replace(/<[^>]*>/g, '').substring(0, 100) + '...',
       color: '#8B5CF6',
       _refreshKey: refreshKey // Use refreshKey to force component updates
-    }]
+    }))
   }
 
   const getDaysInMonth = (month: number, year: number) => {
@@ -111,6 +120,23 @@ export const Journaling = () => {
       day: 'numeric',
       year: 'numeric'
     })
+  }
+
+  const handleDeleteEntry = (entryId: string, entryTitle: string) => {
+    setDeleteConfirm({ entryId, entryTitle })
+  }
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      console.log('🗑️ Deleting entry:', deleteConfirm.entryId)
+      store.deleteEntry(deleteConfirm.entryId)
+      setDeleteConfirm(null)
+      setRefreshKey(prev => prev + 1) // Refresh the calendar
+    }
+  }
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null)
   }
 
   const renderCalendarDays = () => {
@@ -251,45 +277,88 @@ export const Journaling = () => {
             {monthNames[currentMonth]} {currentYear}
           </h2>
           
-          {/* Add New Journal For Today Button */}
-          <button
-            onClick={() => {
-              try {
-                const dateIso = new Date().toISOString().split('T')[0]
-                window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
-              } catch {
-                // Fallback - no action needed
-              }
-            }}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '12px 20px',
-              backgroundColor: '#8B5CF6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#7C3AED'
-              e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#8B5CF6'
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)'
-            }}
-          >
-            <Plus size={16} />
-            Add New Journal For Today
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {/* Add New Journal For Today Button */}
+            <button
+              onClick={() => {
+                try {
+                  const today = new Date()
+                  const dateIso = formatDateToISO(today)
+                  window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+                } catch {
+                  // Fallback - no action needed
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                backgroundColor: '#8B5CF6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#7C3AED'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#8B5CF6'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(139, 92, 246, 0.3)'
+              }}
+            >
+              <Plus size={16} />
+              Add New Journal For Today
+            </button>
+
+            {/* Sync Button */}
+            <button
+              onClick={async () => {
+                try {
+                  await store.syncExistingEntries()
+                  setRefreshKey(prev => prev + 1)
+                } catch (error) {
+                  console.error('Failed to sync:', error)
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 20px',
+                backgroundColor: '#10b981',
+                color: 'white',
+                border: 'none',
+                borderRadius: '20px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#059669'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#10b981'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              🔄
+              Sync from Cloud
+            </button>
+          </div>
         </div>
 
         {/* Month Navigation */}
@@ -537,7 +606,7 @@ export const Journaling = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {getJournalEntriesForDay(selectedDay).map((entry: ReturnType<typeof getJournalEntriesForDay>[0], index: number) => (
                     <div
-                      key={index}
+                      key={entry.id || index}
                       style={{
                         backgroundColor: '#fdfcf8',
                         border: '1px solid #f3f4f6',
@@ -548,10 +617,17 @@ export const Journaling = () => {
                         cursor: 'pointer'
                       }}
                       onClick={() => {
-                        // Open editor for this date
+                        // Open editor for this specific entry
                         const date = new Date(currentYear, currentMonth, selectedDay)
-                        const dateIso = date.toISOString().split('T')[0]
-                        window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+                        const dateIso = formatDateToISO(date)
+                        console.log('🔍 Clicking on entry:', { 
+                          entryId: entry.id, 
+                          dateIso, 
+                          entryContent: entry.content.substring(0, 50) + '...' 
+                        })
+                        window.dispatchEvent(new CustomEvent('open-journal-editor', { 
+                          detail: { dateIso, entryId: entry.id } 
+                        }))
                         setIsDrawerOpen(false)
                       }}
                       onMouseEnter={(e) => {
@@ -587,6 +663,36 @@ export const Journaling = () => {
                               <Clock size={14} />
                               <span style={{ fontSize: '12px' }}>{entry.time}</span>
                             </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation() // Prevent opening editor when clicking delete
+                                handleDeleteEntry(entry.id, entry.title)
+                              }}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                backgroundColor: '#fee2e2',
+                                border: 'none',
+                                borderRadius: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: '#dc2626',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#fecaca'
+                                e.currentTarget.style.transform = 'scale(1.05)'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#fee2e2'
+                                e.currentTarget.style.transform = 'scale(1)'
+                              }}
+                              title="Delete entry"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </div>
                         <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: '1.5', margin: 0 }}>
@@ -595,6 +701,43 @@ export const Journaling = () => {
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Add New Entry Button */}
+                  <button
+                    onClick={() => {
+                      const date = new Date(currentYear, currentMonth, selectedDay!)
+                      const dateIso = formatDateToISO(date)
+                      window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
+                      setIsDrawerOpen(false)
+                    }}
+                    style={{
+                      marginTop: '16px',
+                      padding: '12px 20px',
+                      backgroundColor: '#8B5CF6',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#7C3AED'
+                      e.currentTarget.style.transform = 'translateY(-1px)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#8B5CF6'
+                      e.currentTarget.style.transform = 'translateY(0)'
+                    }}
+                  >
+                    <Plus size={16} />
+                    Add Another Entry
+                  </button>
                 </div>
               ) : (
                 <div style={{ 
@@ -612,7 +755,7 @@ export const Journaling = () => {
                   <button
                     onClick={() => {
                       const date = new Date(currentYear, currentMonth, selectedDay!)
-                      const dateIso = date.toISOString().split('T')[0]
+                      const dateIso = formatDateToISO(date)
                       window.dispatchEvent(new CustomEvent('open-journal-editor', { detail: { dateIso } }))
                       setIsDrawerOpen(false)
                     }}
@@ -631,6 +774,91 @@ export const Journaling = () => {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 20000,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              cancelDelete()
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+              textAlign: 'center'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗑️</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+              Delete Journal Entry
+            </h3>
+            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.5' }}>
+              Are you sure you want to delete "{deleteConfirm.entryTitle}"? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                onClick={cancelDelete}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#6b7280',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e5e7eb'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#b91c1c'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#dc2626'
+                }}
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

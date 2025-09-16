@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import useJournalStore from '@/hooks/useJournalStore'
 
 type Props = {
   date: Date
+  entryId?: string | null
   onClose: () => void
 }
 
@@ -12,24 +14,45 @@ function sanitizeHtml(html: string) {
   return html
 }
 
-export const JournalEditor: React.FC<Props> = ({ date, onClose }) => {
+export const JournalEditor: React.FC<Props> = ({ date, entryId, onClose }) => {
   const store = useJournalStore()
   const [lastSaved, setLastSaved] = useState<number | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [currentEntryId, setCurrentEntryId] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [mlProcessingStatus, setMlProcessingStatus] = useState<string | null>(null)
   const editorRef = useRef<HTMLDivElement | null>(null)
-  const autosaveTimer = useRef<number | null>(null)
   const isInitialized = useRef<boolean>(false)
 
-  // Only initialize content once when component mounts or date changes
+  // Initialize content when component mounts or entryId changes
   useEffect(() => {
     if (!editorRef.current) return
     
-    // Load existing content if available
-    const entry = store.getEntry(date)
-    const existingContent = entry?.content || ''
+    console.log('📝 JournalEditor mounted/updated with entryId:', entryId)
     
-    // Set innerHTML only once per date change
-    editorRef.current.innerHTML = existingContent
-    isInitialized.current = true
+    if (entryId) {
+      console.log('🔄 Editing existing entry with ID:', entryId)
+      setCurrentEntryId(entryId)
+      // Load existing entry content
+      const existingEntry = store.getEntryById(entryId)
+      console.log('📖 Loading existing entry:', { 
+        found: !!existingEntry, 
+        content: existingEntry?.content?.substring(0, 50) + '...' 
+      })
+      if (existingEntry && editorRef.current) {
+        editorRef.current.innerHTML = existingEntry.content
+        console.log('✅ Loaded content into editor successfully')
+      } else {
+        console.warn('❌ Could not load entry content - entry not found or editor not ready')
+      }
+    } else {
+      // New entry - start with empty content
+      console.log('🆕 Creating new entry - clearing content')
+      setCurrentEntryId(null)
+      if (editorRef.current) {
+        editorRef.current.innerHTML = ''
+      }
+    }
     
     // Focus after content is set
     setTimeout(() => {
@@ -37,33 +60,175 @@ export const JournalEditor: React.FC<Props> = ({ date, onClose }) => {
         editorRef.current.focus()
       }
     }, 100)
-  }, [date, store]) // Re-run when date changes
+  }, [entryId, store]) // Run when entryId or store changes
 
+  // Listen for ML processing events
   useEffect(() => {
-    return () => {
-      if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current)
+    const handleMLProcessingStarted = (e: CustomEvent) => {
+      const detail = e.detail || {}
+      console.log(`📝 [EDITOR] ML processing started event received:`, {
+        journalId: detail.journalId,
+        entryId: detail.entryId,
+        processingId: detail.processingId,
+        timestamp: detail.timestamp,
+        currentEntryId,
+        editorEntryId: entryId
+      })
+      
+      setMlProcessingStatus('🤖 AI processing started...')
+      // Clear status after 5 seconds for better visibility
+      setTimeout(() => {
+        console.log(`📝 [EDITOR] Clearing ML processing status after timeout`)
+        setMlProcessingStatus(null)
+      }, 5000)
     }
-  }, [])
 
-  const scheduleAutosave = () => {
-    if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current)
-    autosaveTimer.current = window.setTimeout(() => handleSave(), 2000)
-  }
+    const handleMLProcessingSuccess = (e: CustomEvent) => {
+      const detail = e.detail || {}
+      console.log(`📝 [EDITOR] ML processing success event received:`, {
+        journalId: detail.journalId,
+        entryId: detail.entryId,
+        message: detail.message,
+        processingId: detail.processingId,
+        processingTime: detail.processingTime,
+        timestamp: detail.timestamp,
+        currentEntryId,
+        editorEntryId: entryId
+      })
+      
+      setMlProcessingStatus('✅ AI processing completed!')
+      // Clear status after 5 seconds
+      setTimeout(() => {
+        console.log(`📝 [EDITOR] Clearing ML processing success status after timeout`)
+        setMlProcessingStatus(null)
+      }, 5000)
+    }
 
-  const handleSave = () => {
-    if (!editorRef.current) return
+    const handleMLProcessingError = (e: CustomEvent) => {
+      const detail = e.detail || {}
+      console.log(`📝 [EDITOR] ML processing error event received:`, {
+        journalId: detail.journalId,
+        entryId: detail.entryId,
+        error: detail.error,
+        processingTime: detail.processingTime,
+        timestamp: detail.timestamp,
+        currentEntryId,
+        editorEntryId: entryId
+      })
+      
+      setMlProcessingStatus('⚠️ AI processing delayed')
+      // Clear status after 5 seconds
+      setTimeout(() => {
+        console.log(`📝 [EDITOR] Clearing ML processing error status after timeout`)
+        setMlProcessingStatus(null)
+      }, 5000)
+    }
+
+    console.log(`📝 [EDITOR] Setting up ML processing event listeners for editor with entryId:`, entryId)
+    
+    window.addEventListener('ml-processing-started', handleMLProcessingStarted as EventListener)
+    window.addEventListener('ml-processing-success', handleMLProcessingSuccess as EventListener)
+    window.addEventListener('ml-processing-error', handleMLProcessingError as EventListener)
+    
+    return () => {
+      console.log(`📝 [EDITOR] Cleaning up ML processing event listeners for editor with entryId:`, entryId)
+      window.removeEventListener('ml-processing-started', handleMLProcessingStarted as EventListener)
+      window.removeEventListener('ml-processing-success', handleMLProcessingSuccess as EventListener)
+      window.removeEventListener('ml-processing-error', handleMLProcessingError as EventListener)
+    }
+  }, [entryId, currentEntryId])
+
+  // No cleanup needed since we removed autosave
+
+  const handleSave = async (shouldClose = false) => {
+    if (!editorRef.current || isSaving) return
     const html = sanitizeHtml(editorRef.current.innerHTML)
-    store.saveEntry(date, html)
-    setLastSaved(Date.now())
+    
+    // Only save if there's actual content (not just empty tags)
+    const textContent = editorRef.current.textContent?.trim() || ''
+    if (textContent.length === 0) {
+      console.log('📝 [EDITOR] No content to save - entry is empty')
+      return
+    }
+    
+    const saveId = Math.random().toString(36).substring(7)
+    const saveStartTime = Date.now()
+    
+    setIsSaving(true)
+    console.log(`💾 [EDITOR-${saveId}] Starting journal save:`, { 
+      isEditing: !!currentEntryId, 
+      entryId: currentEntryId, 
+      editorEntryId: entryId,
+      contentLength: textContent.length,
+      contentPreview: textContent.substring(0, 50) + '...',
+      shouldClose,
+      timestamp: new Date().toISOString()
+    })
+    
+    try {
+      console.log(`🔄 [EDITOR-${saveId}] Calling store.saveEntry...`)
+      const savedEntry = store.saveEntry(date, html, currentEntryId || undefined)
+      const saveTime = Date.now() - saveStartTime
+      
+      console.log(`📊 [EDITOR-${saveId}] Save result:`, {
+        savedEntry: savedEntry ? {
+          id: savedEntry.id,
+          dateIso: savedEntry.dateIso,
+          hasApiId: !!savedEntry.apiId
+        } : null,
+        saveTime: `${saveTime}ms`,
+        timestamp: new Date().toISOString()
+      })
+      
+      // If this was a new entry, store the ID for future updates
+      if (!currentEntryId && savedEntry) {
+        setCurrentEntryId(savedEntry.id)
+        console.log(`✅ [EDITOR-${saveId}] New entry created with ID:`, savedEntry.id)
+      } else {
+        console.log(`✅ [EDITOR-${saveId}] Updated existing entry with ID:`, currentEntryId)
+      }
+      
+      setLastSaved(Date.now())
+      
+      // Only close if explicitly requested
+      if (shouldClose) {
+        console.log(`🚪 [EDITOR-${saveId}] Closing editor after save`)
+        onClose()
+      } else {
+        console.log(`📝 [EDITOR-${saveId}] Keeping editor open after save`)
+      }
+    } catch (saveError) {
+      const saveTime = Date.now() - saveStartTime
+      console.error(`💥 [EDITOR-${saveId}] Save failed:`, {
+        error: saveError instanceof Error ? saveError.message : saveError,
+        stack: saveError instanceof Error ? saveError.stack : undefined,
+        saveTime: `${saveTime}ms`,
+        entryId: currentEntryId,
+        editorEntryId: entryId,
+        timestamp: new Date().toISOString()
+      })
+    } finally {
+      setIsSaving(false)
+      const totalSaveTime = Date.now() - saveStartTime
+      console.log(`🏁 [EDITOR-${saveId}] Save operation completed in ${totalSaveTime}ms`)
+    }
   }
 
   const handleCancel = () => {
     onClose()
   }
 
+  const handleDelete = () => {
+    if (currentEntryId) {
+      console.log('🗑️ Deleting entry from editor:', currentEntryId)
+      store.deleteEntry(currentEntryId)
+      onClose()
+    }
+  }
+
   const onInput = () => {
-    if (!editorRef.current || !isInitialized.current) return
-    scheduleAutosave()
+    // Remove autosave - only save when user clicks Save button
+    // This prevents saving incomplete content while typing
   }
 
   const onFocus = () => {
@@ -76,9 +241,7 @@ export const JournalEditor: React.FC<Props> = ({ date, onClose }) => {
 
   const applyCommand = (cmd: string, value?: string) => {
     document.execCommand(cmd, false, value)
-    if (editorRef.current) {
-      scheduleAutosave()
-    }
+    // Don't autosave when applying formatting commands
   }
 
   const dateLabel = date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
@@ -104,7 +267,14 @@ export const JournalEditor: React.FC<Props> = ({ date, onClose }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <div>
               <div style={{ fontFamily: 'Georgia, Times, serif', fontSize: 20, fontWeight: 700 }}>{dateLabel}</div>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>{lastSaved ? `Saved ${new Date(lastSaved).toLocaleTimeString()}` : 'Not saved yet'}</div>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>
+                {isSaving ? 'Saving...' : lastSaved ? `Saved ${new Date(lastSaved).toLocaleTimeString()}` : 'Not saved yet'}
+              </div>
+              {mlProcessingStatus && (
+                <div style={{ fontSize: 12, color: '#8B5CF6', marginTop: 4, fontWeight: 500 }}>
+                  {mlProcessingStatus}
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => applyCommand('bold')} style={{ padding: '8px 12px' }}>B</button>
@@ -112,7 +282,53 @@ export const JournalEditor: React.FC<Props> = ({ date, onClose }) => {
               <button onClick={() => applyCommand('underline')} style={{ padding: '8px 12px' }}>U</button>
               <button onClick={() => applyCommand('insertUnorderedList')} style={{ padding: '8px 12px' }}>• List</button>
               <button onClick={() => applyCommand('formatBlock', '<blockquote>')} style={{ padding: '8px 12px' }}>❝ Quote</button>
-              <button onClick={() => { handleSave(); onClose() }} style={{ padding: '8px 12px', background: '#8B5CF6', color: 'white', border: 'none', borderRadius: 6 }}>Save</button>
+              <button 
+                onClick={() => handleSave(false)} 
+                disabled={isSaving}
+                style={{ 
+                  padding: '8px 12px', 
+                  background: isSaving ? '#9ca3af' : '#10b981', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 6,
+                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSaving ? 'Saving...' : 'Save'}
+              </button>
+              <button 
+                onClick={() => handleSave(true)} 
+                disabled={isSaving}
+                style={{ 
+                  padding: '8px 12px', 
+                  background: isSaving ? '#9ca3af' : '#8B5CF6', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: 6,
+                  cursor: isSaving ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {isSaving ? 'Saving...' : 'Save & Close'}
+              </button>
+              {currentEntryId && (
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{ 
+                    padding: '8px 12px', 
+                    background: '#dc2626', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              )}
               <button onClick={handleCancel} style={{ padding: '8px 12px' }}>Cancel</button>
             </div>
           </div>
@@ -173,6 +389,91 @@ export const JournalEditor: React.FC<Props> = ({ date, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 20000,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowDeleteConfirm(false)
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+              textAlign: 'center'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗑️</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', marginBottom: '8px' }}>
+              Delete Journal Entry
+            </h3>
+            <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '24px', lineHeight: '1.5' }}>
+              Are you sure you want to delete this journal entry? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#6b7280',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e5e7eb'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f3f4f6'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#b91c1c'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#dc2626'
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
