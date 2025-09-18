@@ -16,11 +16,14 @@ import {
 import { 
   dashboardContainerStyle, 
   dashboardHeaderStyle, 
-  overviewSectionStyle,
-  dashboardCardsStyle,
-  bottomSectionStyle 
+  overviewSectionStyle
 } from '../lib/styles';
 import { Task } from '../hooks/useAppState';
+// React 19 compatible charts using Recharts
+import TaskCompletionChart from '../components/charts/TaskCompletionChart';
+import WeeklyActivityHeatmap from '../components/charts/WeeklyActivityHeatmap';
+import EmotionRadarChart from '../components/charts/EmotionRadarChart';
+import { chartData } from '../data/mockChartData';
 
 interface DashboardProps {
   showAccountDropdown: boolean;
@@ -43,6 +46,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   tasks,
   toggleTask
 }) => {
+  // Create fresh mutable data for React 19 + Recharts compatibility
+  const taskCompletionData = chartData.taskCompletion.map(item => ({ ...item }));
+  const emotionData = chartData.emotionDistribution.map(item => ({ ...item }));
+  const activityData = chartData.weeklyActivity.map(item => ({ ...item }));
+
   return (
     <div style={{ padding: '32px' }}>
       <div style={dashboardContainerStyle}>
@@ -205,197 +213,126 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* Dashboard Cards */}
-        <div style={dashboardCardsStyle}>
-          {/* Journaling Card */}
+        {/* Weekly Activity Chart - Full Width at Top */}
+        <div style={{ 
+          backgroundColor: 'white', 
+          borderRadius: '16px', 
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
+          border: '1px solid #f3f4f6', 
+          padding: '24px',
+          marginBottom: '32px'
+        }}>
+          <h3 style={{ 
+            fontSize: '18px', 
+            fontWeight: '600', 
+            color: '#111827', 
+            margin: '0 0 20px 0' 
+          }}>
+            Weekly Heatmap for Current Year
+          </h3>
+          <WeeklyActivityHeatmap data={activityData} />
+        </div>
+
+        {/* Middle Section - Two Charts Side by Side */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr', 
+          gap: '24px',
+          marginBottom: '32px'
+        }}>
+          {/* Task Completion Chart - Left */}
           <div style={{ 
             backgroundColor: 'white', 
             borderRadius: '16px', 
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
             border: '1px solid #f3f4f6', 
-            padding: '24px',
-            position: 'relative',
-            overflow: 'hidden'
+            padding: '24px'
           }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#f3e8ff',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px'
+            <h3 style={{ 
+              fontSize: '18px', 
+              fontWeight: '600', 
+              color: '#111827', 
+              margin: '0 0 20px 0' 
             }}>
-              <BookOpen size={24} color="#8B5CF6" />
-            </div>
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Journaling</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', marginBottom: '4px' }}>26/30 Days</div>
-            <div style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <TrendingUp size={12} />
-              <span>12% increase from last month</span>
-            </div>
+              Task Completion Chart
+            </h3>
+            <TaskCompletionChart data={taskCompletionData} height={300} completionRate={75} />
           </div>
 
-          {/* Meditation Streak Card */}
+          {/* Emotion Distribution Chart - Right */}
           <div style={{ 
             backgroundColor: 'white', 
             borderRadius: '16px', 
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
             border: '1px solid #f3f4f6', 
-            padding: '24px',
-            position: 'relative',
-            overflow: 'hidden'
+            padding: '24px'
           }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#fef3e2',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px'
+            <h3 style={{ 
+              fontSize: '18px', 
+              fontWeight: '600', 
+              color: '#111827', 
+              margin: '0 0 20px 0' 
             }}>
-              <Flower2 size={24} color="#f59e0b" />
-            </div>
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Meditation Streak</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', marginBottom: '4px' }}>123 Days</div>
-            <div style={{ fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>Last Streak - 234</span>
-            </div>
-          </div>
-
-          {/* Next Therapy Session Card */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '16px', 
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-            border: '1px solid #f3f4f6', 
-            padding: '24px',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#e0f2fe',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px'
-            }}>
-              <Calendar size={24} color="#0ea5e9" />
-            </div>
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Next Therapy Session</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', marginBottom: '4px' }}>28 Aug</div>
-            <div style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <TrendingUp size={12} />
-              <span>8% increase from last month</span>
-            </div>
-          </div>
-
-          {/* Mindful Time Card */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '16px', 
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-            border: '1px solid #f3f4f6', 
-            padding: '24px',
-            position: 'relative',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              backgroundColor: '#fef7cd',
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px'
-            }}>
-              <Clock size={24} color="#eab308" />
-            </div>
-            <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>Mindful Time This Week</div>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', marginBottom: '4px' }}>74 Minutes</div>
-            <div style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <TrendingUp size={12} />
-              <span>7% increase from last week</span>
-            </div>
+              Emotional Distribution
+            </h3>
+            <EmotionRadarChart data={emotionData} height={300} />
           </div>
         </div>
 
-        {/* Bottom Section - Tasks and Summary */}
-        <div style={bottomSectionStyle}>
-          {/* Today's Task */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '16px', 
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-            border: '1px solid #f3f4f6', 
-            padding: '24px'
-          }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 20px 0' }}>
-              Today's task
-            </h3>
+        {/* Bottom Section - To-Do List Full Width */}
+        <div style={{ 
+          backgroundColor: 'white', 
+          borderRadius: '16px', 
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
+          border: '1px solid #f3f4f6', 
+          padding: '24px'
+        }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 20px 0' }}>
+            Today's Tasks
+          </h3>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {tasks.map((task, index) => (
-                <div key={index} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '8px 0'
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '16px'
+          }}>
+            {tasks.map((task, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 16px',
+                backgroundColor: task.completed ? '#f0fdf4' : '#fafafa',
+                borderRadius: '8px',
+                border: `1px solid ${task.completed ? '#bbf7d0' : '#e5e7eb'}`
+              }}>
+                <button
+                  onClick={() => toggleTask(index)}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '4px',
+                    border: task.completed ? 'none' : '2px solid #d1d5db',
+                    backgroundColor: task.completed ? '#10b981' : 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  {task.completed && <Check size={12} color="white" />}
+                </button>
+                <span style={{ 
+                  fontSize: '14px', 
+                  color: task.completed ? '#16a34a' : '#111827',
+                  textDecoration: task.completed ? 'line-through' : 'none',
+                  fontWeight: task.completed ? '400' : '500'
                 }}>
-                  <button
-                    onClick={() => toggleTask(index)}
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '4px',
-                      border: task.completed ? 'none' : '2px solid #d1d5db',
-                      backgroundColor: task.completed ? '#10b981' : 'white',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0
-                    }}
-                  >
-                    {task.completed && <Check size={10} color="white" />}
-                  </button>
-                  <span style={{ 
-                    fontSize: '14px', 
-                    color: task.completed ? '#6b7280' : '#111827',
-                    textDecoration: task.completed ? 'line-through' : 'none'
-                  }}>
-                    {task.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Placeholder for other components */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '16px', 
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-            border: '1px solid #f3f4f6', 
-            padding: '24px'
-          }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 20px 0' }}>
-              Overall Progress
-            </h3>
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '40px', 
-              color: '#6b7280' 
-            }}>
-              Coming Soon...
-            </div>
+                  {task.text}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
