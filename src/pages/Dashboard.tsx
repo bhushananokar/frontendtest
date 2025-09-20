@@ -19,11 +19,11 @@ import {
   overviewSectionStyle
 } from '../lib/styles';
 import { Task } from '../hooks/useAppState';
-// React 19 compatible charts using Recharts
 import TaskCompletionChart from '../components/charts/TaskCompletionChart';
-import WeeklyActivityHeatmap from '../components/charts/WeeklyActivityHeatmap';
+import YouTubeVideoCards from '@/components/YoutubeVideoCards';
 import EmotionRadarChart from '../components/charts/EmotionRadarChart';
 import { chartData } from '../data/mockChartData';
+import TaskItem from '@/components/TaskItem';
 
 interface DashboardProps {
   showAccountDropdown: boolean;
@@ -46,10 +46,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   tasks,
   toggleTask
 }) => {
-  // Create fresh mutable data for React 19 + Recharts compatibility
   const taskCompletionData = chartData.taskCompletion.map(item => ({ ...item }));
   const emotionData = chartData.emotionDistribution.map(item => ({ ...item }));
   const activityData = chartData.weeklyActivity.map(item => ({ ...item }));
+
+  const handleHorizontalScroll = (e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  };
 
   return (
     <div style={{ padding: '32px' }}>
@@ -212,127 +218,104 @@ export const Dashboard: React.FC<DashboardProps> = ({
             )}
           </div>
         </div>
-
-        {/* Weekly Activity Chart - Full Width at Top */}
-        <div style={{ 
-          backgroundColor: 'white', 
-          borderRadius: '16px', 
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-          border: '1px solid #f3f4f6', 
-          padding: '24px',
-          marginBottom: '32px'
-        }}>
-          <h3 style={{ 
-            fontSize: '18px', 
-            fontWeight: '600', 
-            color: '#111827', 
-            margin: '0 0 20px 0' 
-          }}>
-            Weekly Heatmap for Current Year
-          </h3>
-          <WeeklyActivityHeatmap data={activityData} />
-        </div>
-
-        {/* Middle Section - Two Charts Side by Side */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
+        
+        {/* TOP ROW - Task Completion & YouTube Videos */}
+        <div style={{
+          display: 'flex',
           gap: '24px',
           marginBottom: '32px'
         }}>
-          {/* Task Completion Chart - Left */}
+          {/* Task Completion Chart (Left) */}
           <div style={{ 
+            flex: '1',
             backgroundColor: 'white', 
             borderRadius: '16px', 
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
             border: '1px solid #f3f4f6', 
-            padding: '24px'
+            padding: '12px'
           }}>
             <h3 style={{ 
-              fontSize: '18px', 
+              fontSize: '16px', 
               fontWeight: '600', 
               color: '#111827', 
-              margin: '0 0 20px 0' 
+              margin: '0 0 12px 0' 
             }}>
-              Task Completion Chart
+              Task Completion
             </h3>
-            <TaskCompletionChart data={taskCompletionData} height={300} completionRate={75} />
+            <TaskCompletionChart data={taskCompletionData} height={160} completionRate={75} />
           </div>
 
-          {/* Emotion Distribution Chart - Right */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '16px', 
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-            border: '1px solid #f3f4f6', 
-            padding: '24px'
-          }}>
+          {/* YouTube Videos Cards (Right) */}
+          <div 
+            style={{ 
+              flex: '2',
+              backgroundColor: 'white', 
+              borderRadius: '16px', 
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
+              border: '1px solid #f3f4f6', 
+              padding: '12px',
+              minWidth: '0'
+            }}
+            onWheel={handleHorizontalScroll}
+          >
             <h3 style={{ 
-              fontSize: '18px', 
+              fontSize: '16px', 
               fontWeight: '600', 
               color: '#111827', 
-              margin: '0 0 20px 0' 
+              margin: '0 0 12px 0' 
             }}>
-              Emotional Distribution
+              Recommended Videos
             </h3>
-            <EmotionRadarChart data={emotionData} height={300} />
+            <YouTubeVideoCards />
           </div>
         </div>
-
-        {/* Bottom Section - To-Do List Full Width */}
-        <div style={{ 
-          backgroundColor: 'white', 
-          borderRadius: '16px', 
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
-          border: '1px solid #f3f4f6', 
-          padding: '24px'
+        
+        {/* MIDDLE SECTION - Emotional Radar Chart and Today's Tasks */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '24px',
+          marginBottom: '32px'
         }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 20px 0' }}>
-            Today's Tasks
-          </h3>
-
-          <div style={{ 
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '16px'
+          {/* Emotional Radar Chart (Left) */}
+          <div style={{
+            flex: '1',
+            backgroundColor: 'white', 
+            borderRadius: '16px', 
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
+            border: '1px solid #f3f4f6', 
+            padding: '24px',
+            minWidth: '0'
           }}>
-            {tasks.map((task, index) => (
-              <div key={index} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                backgroundColor: task.completed ? '#f0fdf4' : '#fafafa',
-                borderRadius: '8px',
-                border: `1px solid ${task.completed ? '#bbf7d0' : '#e5e7eb'}`
-              }}>
-                <button
-                  onClick={() => toggleTask(index)}
-                  style={{
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '4px',
-                    border: task.completed ? 'none' : '2px solid #d1d5db',
-                    backgroundColor: task.completed ? '#10b981' : 'white',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
-                >
-                  {task.completed && <Check size={12} color="white" />}
-                </button>
-                <span style={{ 
-                  fontSize: '14px', 
-                  color: task.completed ? '#16a34a' : '#111827',
-                  textDecoration: task.completed ? 'line-through' : 'none',
-                  fontWeight: task.completed ? '400' : '500'
-                }}>
-                  {task.text}
-                </span>
-              </div>
-            ))}
+            <EmotionRadarChart data={emotionData} height={300} />
+          </div>
+
+          {/* Today's Tasks - Vertical List (Right) */}
+          <div style={{
+            flex: '1',
+            backgroundColor: 'white', 
+            borderRadius: '16px', 
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)', 
+            border: '1px solid #f3f4f6', 
+            padding: '24px',
+            minWidth: '0'
+          }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#111827', margin: '0 0 20px 0' }}>
+              Today's Tasks
+            </h3>
+            <div style={{ 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              {tasks.map((task, index) => (
+                <TaskItem 
+                  key={index}
+                  task={task}
+                  onToggle={() => toggleTask(index)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

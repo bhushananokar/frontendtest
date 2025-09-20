@@ -5,7 +5,7 @@ import { TaskCompletionData } from '../../data/mockChartData';
 interface TaskCompletionChartProps {
   data: TaskCompletionData[];
   height?: number;
-  completionRate?: number; // Overall completion rate for needle
+  completionRate?: number;
 }
 
 const RADIAN = Math.PI / 180;
@@ -16,7 +16,7 @@ const renderCustomizedLabel = ({
   midAngle,
   innerRadius,
   outerRadius,
-  percent,
+  value,
 }: any) => {
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -29,23 +29,22 @@ const renderCustomizedLabel = ({
       fill="white" 
       textAnchor={x > cx ? 'start' : 'end'} 
       dominantBaseline="central"
-      fontSize={12}
+      fontSize={13} 
       fontWeight="bold"
     >
-      {`${(percent * 100).toFixed(0)}%`}
+      {`${value}%`}
     </text>
   );
 };
 
 const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({ 
   data, 
-  height = 300,
-  completionRate = 75 // Default to 75% completion
+  height = 200, 
+  completionRate = 75 
 }) => {
   const [animatedRate, setAnimatedRate] = useState(0);
 
   useEffect(() => {
-    // Animate the needle to its final position
     const timer = setTimeout(() => {
       setAnimatedRate(completionRate);
     }, 300);
@@ -53,7 +52,6 @@ const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({
     return () => clearTimeout(timer);
   }, [completionRate]);
 
-  // Calculate needle angle (0% = 180°, 100% = 0°)
   const needleAngle = 180 - (180 * animatedRate / 100);
 
   return (
@@ -66,7 +64,6 @@ const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({
         alignItems: 'center',
         position: 'relative'
       }}>
-        {/* Pie Chart */}
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -75,9 +72,9 @@ const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({
               endAngle={0}
               data={data}
               cx="50%"
-              cy="60%"
-              innerRadius={50}
-              outerRadius={90}
+              cy="75%" // Moved the chart center down to create more space above
+              innerRadius={65} 
+              outerRadius={95} 
               fill="#8884d8"
               stroke="none"
               labelLine={false}
@@ -91,18 +88,13 @@ const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        
-        {/* Needle Overlay */}
-        {/* Pin/needle overlay removed as requested */}
       </div>
       
-      {/* Completion Rate Display */}
-      <div style={{ textAlign: 'center', marginTop: '8px', marginBottom: '16px' }}>
+      <div style={{ textAlign: 'center', marginTop: '12px', marginBottom: '16px' }}>
         <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#111827' }}>{completionRate}%</div>
         <div style={{ fontSize: '14px', color: '#6b7280' }}>Overall Completion</div>
       </div>
 
-      {/* Color Legend - Only show color representations */}
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px', fontSize: '14px' }}>
         {data.map((entry, index) => (
           <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -343,39 +343,46 @@ export const MeditationApp: React.FC = () => {
     };
   }, []);
 
+ 
   return (
-    <div className={`app-container ${currentView}`}>
-      {/* Landing Page */}
-      {currentView === 'landing' && (
-        <div className="landing-page">
-          <div className="landing-content">
-            <div className="start-meditation-container">
-              <button 
-                className="start-meditation-btn"
-                onClick={startMeditation}
-                aria-label={`Start ${sessionDuration} minute meditation session`}
-              >
-                Start Meditation
-              </button>
-            </div>
-            
-            <div className="session-controls">
-              <div className="duration-selector">
-                <label htmlFor="duration-select">Session Duration:</label>
-                <select 
-                  id="duration-select"
-                  value={sessionDuration} 
-                  onChange={(e) => setSessionDuration(parseInt(e.target.value))}
-                >
-                  <option value={5}>5 minutes</option>
-                  <option value={10}>10 minutes</option>
-                  <option value={15}>15 minutes</option>
-                  <option value={20}>20 minutes</option>
-                </select>
+  <div className={`app-container ${currentView}`}>
+    {/* Landing Page */}
+    {currentView === 'landing' && (
+      <div className="landing-page">
+        <div className="landing-content">
+          <div className="start-meditation-container">
+            <button 
+              className="start-meditation-btn"
+              onClick={startMeditation}
+              aria-label={`Start ${sessionDuration} minute meditation session`}
+            >
+              Start Meditation
+            </button>
+          </div>
+          
+          <div className="main-options-panel">
+            <div className="session-controls-group">
+              <div className="duration-selector-wrapper">
+                <label htmlFor="duration-select">Duration</label>
+                <div className="custom-select">
+                  <select 
+                    id="duration-select"
+                    value={sessionDuration} 
+                    onChange={(e) => setSessionDuration(parseInt(e.target.value))}
+                  >
+                    <option value={5}>5 minutes</option>
+                    <option value={10}>10 minutes</option>
+                    <option value={15}>15 minutes</option>
+                    <option value={20}>20 minutes</option>
+                  </select>
+                  <div className="custom-select-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                  </div>
+                </div>
               </div>
               
               <button 
-                className="customization-btn"
+                className={`customization-btn ${showCustomization ? 'active' : ''}`}
                 onClick={() => setShowCustomization(!showCustomization)}
                 aria-expanded={showCustomization}
               >
@@ -386,7 +393,7 @@ export const MeditationApp: React.FC = () => {
             {showCustomization && (
               <div className="customization-panel">
                 <div className="theme-selector">
-                  <label>Background Theme:</label>
+                  <label>Background Theme</label>
                   <div className="theme-options">
                     <button 
                       className={`theme-btn ${selectedTheme === 'galaxy' ? 'active' : ''}`}
@@ -414,19 +421,23 @@ export const MeditationApp: React.FC = () => {
             {sessionHistory.length > 0 && (
               <div className="session-history">
                 <h3>Previous Sessions</h3>
-                <div className="history-list">
-                  {sessionHistory.map((session, index) => (
-                    <div key={index} className="history-item">
-                      <span className="date">{session.date}</span>
-                      <span className="duration">{session.duration} min</span>
-                    </div>
-                  ))}
+                <div className="history-list-wrapper">
+                  <div className="history-list">
+                    {sessionHistory.map((session, index) => (
+                      <div key={index} className="history-item">
+                        <span className="date">{session.date}</span>
+                        <span className="duration">{session.duration} min</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
-      )}
+      </div>
+    )}
+
 
       {/* Transition Animation */}
       {currentView === 'transition' && (
