@@ -410,7 +410,55 @@ export const useJournalStore = () => {
     }
   }, [])
 
-  return { getEntry, getEntriesForDate, getEntryById, saveEntry, deleteEntry, listEntries, syncExistingEntries, clearLocalStorage }
+  // Get all journal entries organized by date from API
+  const getAllJournalsByDate = useCallback(async () => {
+    try {
+      const result = await journalApi.getAllJournalsByDate()
+      
+      if (result.success && result.data) {
+        // Convert to a more display-friendly format
+        const dateWiseEntries = Object.entries(result.data).map(([date, entries]) => ({
+          date,
+          entries: entries.map(entry => ({
+            id: entry.id || '',
+            title: entry.title,
+            content: entry.content,
+            mood: entry.mood,
+            tags: entry.tags,
+            createdAt: entry.createdAt || '',
+            updatedAt: entry.updatedAt || ''
+          })),
+          entryCount: entries.length,
+          dateFormatted: new Date(date).toLocaleDateString('en-US', { 
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long', 
+            day: 'numeric' 
+          })
+        })).sort((a, b) => b.date.localeCompare(a.date)) // Sort by date, newest first
+
+        return dateWiseEntries
+      } else {
+        console.warn('Failed to fetch all journals by date:', result.error)
+        return []
+      }
+    } catch (error) {
+      console.error('Error fetching all journals by date:', error)
+      return []
+    }
+  }, [])
+
+  return { 
+    getEntry, 
+    getEntriesForDate, 
+    getEntryById, 
+    saveEntry, 
+    deleteEntry, 
+    listEntries, 
+    syncExistingEntries, 
+    clearLocalStorage,
+    getAllJournalsByDate
+  }
 }
 
 export default useJournalStore

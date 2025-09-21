@@ -43,7 +43,7 @@ class JournalApiService {
       ? mlEndpoint // Use environment variable in development
       : mlEndpoint
     // For now, use a default userId - in a real app, this would come from auth
-    this.userId = 'digitaltwin-user'
+    this.userId = 'emma_rodriguez'
     
     // Debug logging for API configuration
     console.log('🔧 [API-CONFIG] Journal API Service initialized:', {
@@ -258,6 +258,62 @@ class JournalApiService {
       title: journalTitle,
       content,
     })
+  }
+
+  // Get all journal entries organized by date for display
+  async getAllJournalsByDate(): Promise<ApiResponse<{ [date: string]: JournalEntry[] }>> {
+    try {
+      // Get all user journals with a high limit to ensure we get all entries
+      const result = await this.getUserJournals(this.userId, 1000, 0)
+      
+      if (!result.success || !result.data) {
+        return result as ApiResponse<{ [date: string]: JournalEntry[] }>
+      }
+
+      // Group entries by date
+      const entriesByDate: { [date: string]: JournalEntry[] } = {}
+      
+      result.data.forEach(entry => {
+        if (entry.createdAt) {
+          const date = new Date(entry.createdAt)
+          const dateKey = this.formatDateKey(date)
+          
+          if (!entriesByDate[dateKey]) {
+            entriesByDate[dateKey] = []
+          }
+          entriesByDate[dateKey].push(entry)
+        }
+      })
+
+      // Sort entries within each date by creation time (newest first)
+      Object.keys(entriesByDate).forEach(dateKey => {
+        entriesByDate[dateKey].sort((a, b) => {
+          const dateA = new Date(a.createdAt || 0)
+          const dateB = new Date(b.createdAt || 0)
+          return dateB.getTime() - dateA.getTime()
+        })
+      })
+
+      return {
+        success: true,
+        data: entriesByDate,
+        count: result.data.length
+      }
+    } catch (error) {
+      console.error('Error getting all journals by date:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }
+    }
+  }
+
+  // Helper method to format date as YYYY-MM-DD key
+  private formatDateKey(date: Date): string {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 }
 
