@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import './MeditationApp.css';
 import meditationFigure from '../assets/meditation/meditation-figure.png';
 import backgroundAudio from '../assets/meditation/background-music.mp3';
+import { useMeditationTTS } from '../hooks/useMeditationTTS';
 
 // Types for better TypeScript safety
 interface Star {
@@ -43,6 +44,9 @@ export const MeditationApp: React.FC = () => {
   const [selectedTheme, setSelectedTheme] = useState<ThemeType>('galaxy');
   const [sessionHistory, setSessionHistory] = useState<SessionHistory[]>([]);
   const [showCustomization, setShowCustomization] = useState(false);
+  
+  // TTS Integration - ADD THIS LINE
+  const { state: ttsState, controls: ttsControls } = useMeditationTTS();
   
   // Animation and audio refs
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -145,8 +149,17 @@ export const MeditationApp: React.FC = () => {
   
   const [currentChunkIndex, setCurrentChunkIndex] = useState(0);
 
-  // Speech synthesis with error handling
+  // Speech synthesis with error handling - MODIFIED TO INCLUDE TTS
   const playMockNarration = () => {
+    const currentText = meditationChunks[currentChunkIndex];
+    
+    // Try TTS first, fallback to browser speech
+    if (ttsState.isConnected) {
+      ttsControls.speak(currentText);
+      return;
+    }
+    
+    // Existing browser speech synthesis fallback
     if (!('speechSynthesis' in window)) {
       console.warn('Speech synthesis not supported');
       return;
@@ -159,7 +172,7 @@ export const MeditationApp: React.FC = () => {
       // Short delay to ensure clean speech synthesis
       setTimeout(() => {
         const speakText = () => {
-          const utterance = new SpeechSynthesisUtterance(meditationChunks[currentChunkIndex]);
+          const utterance = new SpeechSynthesisUtterance(currentText);
           utterance.rate = 0.5;
           utterance.pitch = 0.1;
           utterance.volume = 0.9;
@@ -264,9 +277,10 @@ export const MeditationApp: React.FC = () => {
       }
     }
     
-    // Handle speech synthesis
+    // Handle speech synthesis - MODIFIED TO INCLUDE TTS
     if (isPlaying) {
       speechSynthesis.pause();
+      ttsControls.stopSpeaking(); // ADD THIS LINE
     } else {
       speechSynthesis.resume();
     }
@@ -291,8 +305,9 @@ export const MeditationApp: React.FC = () => {
       backgroundAudioRef.current.currentTime = 0;
     }
     
-    // Stop speech synthesis
+    // Stop speech synthesis - MODIFIED TO INCLUDE TTS
     speechSynthesis.cancel();
+    ttsControls.stopSpeaking(); // ADD THIS LINE
     setIsSpeaking(false);
     
     setCurrentView('landing');
@@ -316,8 +331,9 @@ export const MeditationApp: React.FC = () => {
       backgroundAudioRef.current.currentTime = 0;
     }
     
-    // Stop speech synthesis
+    // Stop speech synthesis - MODIFIED TO INCLUDE TTS
     speechSynthesis.cancel();
+    ttsControls.stopSpeaking(); // ADD THIS LINE
     setIsSpeaking(false);
     
     setCurrentView('landing');
@@ -343,101 +359,102 @@ export const MeditationApp: React.FC = () => {
     };
   }, []);
 
- 
+  // MODIFIED: Use TTS speaking state if available, fallback to browser state
+  const currentIsSpeaking = ttsState.isConnected ? ttsState.isSpeaking : isSpeaking;
+
   return (
-  <div className={`app-container ${currentView}`}>
-    {/* Landing Page */}
-    {currentView === 'landing' && (
-      <div className="landing-page">
-        <div className="landing-content">
-          <div className="start-meditation-container">
-            <button 
-              className="start-meditation-btn"
-              onClick={startMeditation}
-              aria-label={`Start ${sessionDuration} minute meditation session`}
-            >
-              Start Meditation
-            </button>
-          </div>
-          
-          <div className="main-options-panel">
-            <div className="session-controls-group">
-              <div className="duration-selector-wrapper">
-                <label htmlFor="duration-select">Duration</label>
-                <div className="custom-select">
-                  <select 
-                    id="duration-select"
-                    value={sessionDuration} 
-                    onChange={(e) => setSessionDuration(parseInt(e.target.value))}
-                  >
-                    <option value={5}>5 minutes</option>
-                    <option value={10}>10 minutes</option>
-                    <option value={15}>15 minutes</option>
-                    <option value={20}>20 minutes</option>
-                  </select>
-                  <div className="custom-select-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
-                  </div>
-                </div>
-              </div>
-              
+    <div className={`app-container ${currentView}`}>
+      {/* Landing Page */}
+      {currentView === 'landing' && (
+        <div className="landing-page">
+          <div className="landing-content">
+            <div className="start-meditation-container">
               <button 
-                className={`customization-btn ${showCustomization ? 'active' : ''}`}
-                onClick={() => setShowCustomization(!showCustomization)}
-                aria-expanded={showCustomization}
+                className="start-meditation-btn"
+                onClick={startMeditation}
+                aria-label={`Start ${sessionDuration} minute meditation session`}
               >
-                Customize
+                Start Meditation
               </button>
             </div>
-
-            {showCustomization && (
-              <div className="customization-panel">
-                <div className="theme-selector">
-                  <label>Background Theme</label>
-                  <div className="theme-options">
-                    <button 
-                      className={`theme-btn ${selectedTheme === 'galaxy' ? 'active' : ''}`}
-                      onClick={() => setSelectedTheme('galaxy')}
+            
+            <div className="main-options-panel">
+              <div className="session-controls-group">
+                <div className="duration-selector-wrapper">
+                  <label htmlFor="duration-select">Duration</label>
+                  <div className="custom-select">
+                    <select 
+                      id="duration-select"
+                      value={sessionDuration} 
+                      onChange={(e) => setSessionDuration(parseInt(e.target.value))}
                     >
-                      Galaxy
-                    </button>
-                    <button 
-                      className={`theme-btn ${selectedTheme === 'forest' ? 'active' : ''}`}
-                      onClick={() => setSelectedTheme('forest')}
-                    >
-                      Forest
-                    </button>
-                    <button 
-                      className={`theme-btn ${selectedTheme === 'ocean' ? 'active' : ''}`}
-                      onClick={() => setSelectedTheme('ocean')}
-                    >
-                      Ocean
-                    </button>
+                      <option value={5}>5 minutes</option>
+                      <option value={10}>10 minutes</option>
+                      <option value={15}>15 minutes</option>
+                      <option value={20}>20 minutes</option>
+                    </select>
+                    <div className="custom-select-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                    </div>
                   </div>
                 </div>
+                
+                <button 
+                  className={`customization-btn ${showCustomization ? 'active' : ''}`}
+                  onClick={() => setShowCustomization(!showCustomization)}
+                  aria-expanded={showCustomization}
+                >
+                  Customize
+                </button>
               </div>
-            )}
 
-            {sessionHistory.length > 0 && (
-              <div className="session-history">
-                <h3>Previous Sessions</h3>
-                <div className="history-list-wrapper">
-                  <div className="history-list">
-                    {sessionHistory.map((session, index) => (
-                      <div key={index} className="history-item">
-                        <span className="date">{session.date}</span>
-                        <span className="duration">{session.duration} min</span>
-                      </div>
-                    ))}
+              {showCustomization && (
+                <div className="customization-panel">
+                  <div className="theme-selector">
+                    <label>Background Theme</label>
+                    <div className="theme-options">
+                      <button 
+                        className={`theme-btn ${selectedTheme === 'galaxy' ? 'active' : ''}`}
+                        onClick={() => setSelectedTheme('galaxy')}
+                      >
+                        Galaxy
+                      </button>
+                      <button 
+                        className={`theme-btn ${selectedTheme === 'forest' ? 'active' : ''}`}
+                        onClick={() => setSelectedTheme('forest')}
+                      >
+                        Forest
+                      </button>
+                      <button 
+                        className={`theme-btn ${selectedTheme === 'ocean' ? 'active' : ''}`}
+                        onClick={() => setSelectedTheme('ocean')}
+                      >
+                        Ocean
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {sessionHistory.length > 0 && (
+                <div className="session-history">
+                  <h3>Previous Sessions</h3>
+                  <div className="history-list-wrapper">
+                    <div className="history-list">
+                      {sessionHistory.map((session, index) => (
+                        <div key={index} className="history-item">
+                          <span className="date">{session.date}</span>
+                          <span className="duration">{session.duration} min</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    )}
-
+      )}
 
       {/* Transition Animation */}
       {currentView === 'transition' && (
@@ -499,8 +516,8 @@ export const MeditationApp: React.FC = () => {
 
           {/* Meditation Figure */}
           <div className="meditation-figure-container">
-            {/* Responsive Orb Background */}
-            <div className={`meditation-orb ${isSpeaking ? 'orb-active' : 'orb-idle'}`}>
+            {/* Responsive Orb Background - MODIFIED TO USE TTS STATE */}
+            <div className={`meditation-orb ${currentIsSpeaking ? 'orb-active' : 'orb-idle'}`}>
               <div className="orb-layer orb-layer-1"></div>
               <div className="orb-layer orb-layer-2"></div>
               <div className="orb-layer orb-layer-3"></div>

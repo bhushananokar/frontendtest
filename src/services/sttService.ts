@@ -14,7 +14,7 @@ export interface AudioRecordingState {
 }
 
 class STTService {
-  private readonly STT_ENDPOINT = 'http://localhost:8080/transcribe';
+  private readonly STT_ENDPOINT = 'https://mindspace-stt-222233295505.asia-south1.run.app/transcribe';
   private recordingStartTime: number = 0;
   private audioRecordingState: AudioRecordingState = {
     isRecording: false,

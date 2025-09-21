@@ -38,7 +38,7 @@ export interface AudioChunk {
 }
 
 class TTSService {
-  private readonly WS_URL = 'ws://ws.mymindspace.in/ws/tts'; // Back to original
+  private readonly WS_URL = 'ws://localhost:8001/ws/tts'; // Back to original
   private websocket: WebSocket | null = null;
   private isConnected: boolean = false;
   private audioQueue: AudioChunk[] = [];
