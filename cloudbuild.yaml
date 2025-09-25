@@ -1,0 +1,29 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/frontendtest:$COMMIT_SHA', '.']
+
+  # Push the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/frontendtest:$COMMIT_SHA']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'frontendtest'  # Replace with your Cloud Run service name
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/frontendtest:$COMMIT_SHA'
+      - '--region'
+      - 'asia-southeast1'  # Replace with your preferred region
+      - '--platform'
+      - 'managed'
+      - '--port'
+      - '5173'
+      - '--allow-unauthenticated'
+
+# Options for the build
+options:
+  logging: CLOUD_LOGGING_ONLY

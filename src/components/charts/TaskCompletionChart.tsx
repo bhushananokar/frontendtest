@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { TaskCompletionData } from '../../data/mockChartData';
 
@@ -42,17 +42,6 @@ const TaskCompletionChart: React.FC<TaskCompletionChartProps> = ({
   height = 200, 
   completionRate = 75 
 }) => {
-  const [animatedRate, setAnimatedRate] = useState(0);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimatedRate(completionRate);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [completionRate]);
-
-  const needleAngle = 180 - (180 * animatedRate / 100);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>

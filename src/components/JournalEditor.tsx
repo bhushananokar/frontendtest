@@ -22,7 +22,6 @@ export const JournalEditor: React.FC<Props> = ({ date, entryId, onClose }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [mlProcessingStatus, setMlProcessingStatus] = useState<string | null>(null)
   const editorRef = useRef<HTMLDivElement | null>(null)
-  const isInitialized = useRef<boolean>(false)
 
   // Initialize content when component mounts or entryId changes
   useEffect(() => {

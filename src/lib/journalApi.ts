@@ -267,7 +267,7 @@ class JournalApiService {
       const result = await this.getUserJournals(this.userId, 1000, 0)
       
       if (!result.success || !result.data) {
-        return result as ApiResponse<{ [date: string]: JournalEntry[] }>
+        return result as unknown as ApiResponse<{ [date: string]: JournalEntry[] }>
       }
 
       // Group entries by date

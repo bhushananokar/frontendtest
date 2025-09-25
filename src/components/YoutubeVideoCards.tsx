@@ -123,7 +123,7 @@ export const YouTubeVideoCards: React.FC = () => {
             flexWrap: 'nowrap',
           }}
         >
-          {videos.map((video, index) => {
+          {videos.map((video) => {
             const [isHovering, setIsHovering] = useState(false);
             return (
               <a

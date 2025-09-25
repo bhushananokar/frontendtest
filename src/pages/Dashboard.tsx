@@ -1,14 +1,8 @@
 import React from 'react';
 import { 
-  BookOpen,
-  Flower2,
   Search,
   ChevronDown,
-  User,
-  Calendar,
-  Clock,
-  TrendingUp,
-  Check
+  User
 } from "lucide-react";
 import { 
   TIME_RANGE_OPTIONS
@@ -48,7 +42,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const taskCompletionData = chartData.taskCompletion.map(item => ({ ...item }));
   const emotionData = chartData.emotionDistribution.map(item => ({ ...item }));
-  const activityData = chartData.weeklyActivity.map(item => ({ ...item }));
 
   const handleHorizontalScroll = (e: React.WheelEvent<HTMLDivElement>) => {
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
